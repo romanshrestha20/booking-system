@@ -9,24 +9,24 @@ CREATE TABLE Users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
-    role VARCHAR(50) DEFAULT 'customer'
+    role VARCHAR(50) DEFAULT 'customer' CHECK (role IN ('admin', 'customer')) -- Enforces valid roles
 );
 
 -- Create Rooms Table
 CREATE TABLE Rooms (
     room_id SERIAL PRIMARY KEY,
-    room_number VARCHAR(50) UNIQUE NOT NULL,
+    room_number VARCHAR(50) UNIQUE NOT NULL, -- Ensures room_number is unique
     type VARCHAR(50) NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     is_available BOOLEAN DEFAULT true,
-    description TEXT -- New column added
+    description TEXT
 );
 
 -- Create Bookings Table
 CREATE TABLE Bookings (
     booking_id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES Users(user_id),
-    room_id INT REFERENCES Rooms(room_id),
+    user_id INT REFERENCES Users(user_id), -- Foreign key to Users table
+    room_id INT REFERENCES Rooms(room_id), -- Foreign key to Rooms table
     check_in_date DATE NOT NULL,
     check_out_date DATE NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
