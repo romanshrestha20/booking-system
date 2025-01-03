@@ -1,5 +1,10 @@
 import pool from "../db.js";
+import bcrypt from 'bcryptjs';
 
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
 export const createUser = async (user) => {
   const { name, email, password, role = "customer" } = user;
 
@@ -11,10 +16,14 @@ export const createUser = async (user) => {
     throw new Error('Role must be either "admin" or "customer"');
   }
 
+  // Hash password
+  const hashedPassword = await hashPassword(password);
+
+
   try {
     const result = await pool.query(
       "INSERT INTO Users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *",
-      [name, normalizedEmail, password, role]
+      [name, normalizedEmail, hashedPassword, role]
     );
     return result.rows[0];
   } catch (error) {
@@ -73,10 +82,14 @@ export const updateUser = async (user_id, user) => {
   }
   const normalizedEmail = email.toLowerCase();
 
+
+  // If password is provided, hash it
+  const updatedPassword = password ? await hashPassword(password) : undefined;
+
   try {
     const result = await pool.query(
       "UPDATE Users SET name = $1, email = $2, password = $3, role = $4 WHERE user_id = $5 RETURNING *",
-      [name, normalizedEmail, password, role, user_id]
+      [name, normalizedEmail, updatedPassword || password, role, user_id]
     );
     return result.rows[0];
   } catch (error) {

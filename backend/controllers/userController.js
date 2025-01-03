@@ -1,3 +1,4 @@
+import express from "express";
 import {
   createUser,
   getUsers,
@@ -6,6 +7,9 @@ import {
   updateUser,
   deleteUser,
 } from "../models/users.js";
+
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 // Create a new user
 export const createUserController = async (req, res) => {
@@ -45,6 +49,48 @@ export const createUserController = async (req, res) => {
       console.error("Error creating user:", error.message);
       res.status(500).json({ error: "Server error" });
     }
+  }
+};
+
+// Login a user and return a JWT
+export const loginUserController = async (req, res) => {
+  const { email, password } = req.body;
+
+  // Validate required fields
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  try {
+    const user = await getUserByEmail(email.toLowerCase());
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Compare hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Generate a JWT token
+    const token = jwt.sign(
+      {
+        user_id: user.user_id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" } // Shorter expiry for better security
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+    });
+  } catch (error) {
+    console.error("Error logging in user:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 

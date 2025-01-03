@@ -6,8 +6,10 @@ import {
   getUserByEmailController,
   updateUserController,
   deleteUserController,
+  loginUserController
 } from "../controllers/userController.js";
 
+import { authenticateUser } from "../middlewares/authMiddleware.js";
 import {
   validateCreateUser,
   validateUserId,
@@ -19,23 +21,22 @@ const router = express.Router();
 // Create a new user
 router.post("/", validateCreateUser, createUserController);
 
-// Get all users
-router.get("/", getUsersController);
+// Login a user
+router.post("/login", loginUserController);
 
-// Get a user by ID
-router.get("/:user_id", validateUserId, getUserByIdController);
+// Get all users (protected)
+router.get("/", authenticateUser, getUsersController);
+
+// Get a user by ID (protected)
+router.get("/:user_id", authenticateUser, validateUserId, getUserByIdController);
 
 // Get a user by email
 router.get("/email/:email", getUserByEmailController);
 
-// Update a user by ID
-router.put(
-  "/:user_id",
-  [validateUserId, validateUpdateUser],
-  updateUserController
-);
+// Update a user by ID (protected)
+router.put("/:user_id", authenticateUser, validateUserId, validateUpdateUser, updateUserController);
 
-// Delete a user by ID
-router.delete("/:user_id", validateUserId, deleteUserController);
+// Delete a user by ID (protected)
+router.delete("/:user_id", authenticateUser, validateUserId, deleteUserController);
 
 export default router;
