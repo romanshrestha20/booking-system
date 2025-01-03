@@ -136,8 +136,14 @@ export const deleteBooking = async (booking_id) => {
 };
 
 
-// Check if a room is available for the given dates
 export const isRoomAvailable = async (room_id, check_in_date, check_out_date) => {
+  if (!Number.isInteger(room_id) || room_id <= 0) {
+    throw new Error('Invalid room ID');
+  }
+  if (!Date.parse(check_in_date) || !Date.parse(check_out_date)) {
+    throw new Error('Invalid date format');
+  }
+
   try {
     const result = await pool.query(
       `SELECT * FROM Bookings 
@@ -149,7 +155,7 @@ export const isRoomAvailable = async (room_id, check_in_date, check_out_date) =>
        )`,
       [room_id, check_in_date, check_out_date]
     );
-    return result.rows.length === 0; // Room is available if no overlapping bookings are found
+    return result.rows.length === 0;
   } catch (error) {
     console.error("Error checking room availability:", error.message);
     throw error;

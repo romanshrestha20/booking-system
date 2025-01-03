@@ -1,11 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import pool from "./db.js";
 import roomsRoute from "./routes/roomsRoute.js";
 import usersRoute from "./routes/usersRoute.js";
 import bookingsRoute from "./routes/bookingsRoute.js";
-// import nodemailer from 'nodemailer';
+import { errorHandler } from './middlewares/errorHandler.js';
 
 // Load environment variables
 dotenv.config();
@@ -14,15 +13,6 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// // Nodemailer setup
-// const transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS,
-//     },
-// });
 
 // Test route
 app.get("/", (req, res) => {
@@ -34,9 +24,11 @@ app.use("/api/rooms", roomsRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/bookings', bookingsRoute);
 
+// Error handler middleware (placed at the end)
+app.use(errorHandler);
+
 // Start server
 const PORT = process.env.PORT || 5001;
-
 app.listen(PORT, () => {
   console.log(`Server running on port http://localhost:${PORT}`);
 });
