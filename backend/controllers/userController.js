@@ -178,7 +178,9 @@ export const deleteUserController = async (req, res) => {
 
     // Delete the user
     await deleteUser(user_id);
-    res.status(204).send(); // Send a 204 No Content response for successful deletion
+    res.json({
+      message: `User (${user_id}) deleted successfully`,
+    }); // Send a success response
   } catch (error) {
     console.error("Error deleting user:", error.message);
     res.status(500).json({ error: "Server error" }); // Send a 500 Server Error response
