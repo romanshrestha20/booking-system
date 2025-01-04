@@ -9,7 +9,9 @@ CREATE TABLE Users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(100) NOT NULL,
-    role VARCHAR(50) DEFAULT 'customer' CHECK (role IN ('admin', 'customer')) -- Enforces valid roles
+    role VARCHAR(50) DEFAULT 'customer' CHECK (role IN ('admin', 'customer')), -- Enforces valid roles
+    confirmation_code VARCHAR(6), -- 6-digit code for email confirmation
+    is_confirmed BOOLEAN DEFAULT false -- Tracks whether the email is confirmed
 );
 
 -- Create Rooms Table
@@ -34,10 +36,10 @@ CREATE TABLE Bookings (
 );
 
 -- Insert Sample Data into Users Table
-INSERT INTO Users (name, email, password, role) VALUES
-('John Doe', 'john.doe@example.com', 'password123', 'customer'),
-('Jane Smith', 'jane.smith@example.com', 'password456', 'customer'),
-('Admin User', 'admin@example.com', 'admin123', 'admin');
+INSERT INTO Users (name, email, password, role, confirmation_code, is_confirmed) VALUES
+('John Doe', 'john.doe@example.com', 'password123', 'customer', '123456', true),
+('Jane Smith', 'jane.smith@example.com', 'password456', 'customer', '654321', false),
+('Admin User', 'admin@example.com', 'admin123', 'admin', '987654', true);
 
 -- Insert Sample Data into Rooms Table
 INSERT INTO Rooms (room_number, type, price, is_available, description) VALUES

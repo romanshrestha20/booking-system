@@ -1,4 +1,3 @@
-import express from "express";
 import {
   createUser,
   getUsers,
@@ -7,9 +6,10 @@ import {
   updateUser,
   deleteUser,
 } from "../models/users.js";
-
+import { sendConfirmationEmail } from "../utils/sendEmail.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import pool from "../db.js"; // Ensure pool is imported
 
 // Create a new user
 export const createUserController = async (req, res) => {
@@ -21,6 +21,7 @@ export const createUserController = async (req, res) => {
       .status(400)
       .json({ error: "Name, email, and password are required" });
   }
+
   // Normalize email to lowercase
   const normalizedEmail = email.toLowerCase();
 
@@ -32,23 +33,120 @@ export const createUserController = async (req, res) => {
   }
 
   try {
+    // Create the user in the database
     const newUser = await createUser({
       name,
       email: normalizedEmail,
       password,
       role,
     });
+
+    // Send confirmation email with the 6-digit code
+    await sendConfirmationEmail(normalizedEmail, newUser.confirmation_code);
+
+    // If email is sent successfully, return success response
     res.status(201).json({
-      message: "User created",
+      message:
+        "User created. Please check your email for the confirmation code.",
       user: newUser,
     });
+    console.log("Confirmation code: " + newUser.confirmation_code);
   } catch (error) {
+    console.error("Error during user creation:", error.message);
+
+    // If the error is related to email sending, delete the user
+    if (error.message.includes("Error sending confirmation email")) {
+      try {
+        // Delete the user if the email fails to send
+        await deleteUser(newUser.user_id);
+        console.log("User deleted due to email sending failure.");
+      } catch (deleteError) {
+        console.error("Error deleting user:", deleteError.message);
+      }
+    }
+
+    // Return appropriate error response
     if (error.message === "Email already exists") {
       res.status(409).json({ error: error.message });
+    } else if (error.message.includes("Error sending confirmation email")) {
+      res.status(500).json({
+        error: "Failed to send confirmation email. Account not created.",
+      });
     } else {
-      console.error("Error creating user:", error.message);
       res.status(500).json({ error: "Server error" });
     }
+  }
+};
+
+// Confirm email with 6-digit code
+export const confirmCodeController = async (req, res) => {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ error: "Email and code are required" });
+  }
+
+  try {
+    const user = await getUserByEmail(email.toLowerCase());
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.is_confirmed) {
+      return res.status(400).json({ error: "Email already confirmed" });
+    }
+
+    if (user.confirmation_code !== code) {
+      return res.status(400).json({ error: "Invalid confirmation code" });
+    }
+
+    // Mark the user as confirmed
+    await pool.query(
+      "UPDATE Users SET is_confirmed = true, confirmation_code = NULL WHERE user_id = $1",
+      [user.user_id]
+    );
+
+    res.json({ message: "Email confirmed successfully" });
+  } catch (error) {
+    console.error("Error confirming email:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Resend confirmation email with a new 6-digit code
+export const resendEmailController = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    const user = await getUserByEmail(email.toLowerCase());
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.is_confirmed) {
+      return res.status(400).json({ error: "Email already confirmed" });
+    }
+
+    // Generate a new 6-digit confirmation code
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await pool.query(
+      "UPDATE Users SET confirmation_code = $1 WHERE user_id = $2",
+      [newCode, user.user_id]
+    );
+
+    // Send confirmation email with the new code
+    await sendConfirmationEmail(email, newCode);
+
+    res.json({ message: "Confirmation email sent successfully" });
+  } catch (error) {
+    console.error("Error resending confirmation email:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -71,6 +169,13 @@ export const loginUserController = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Check if email is confirmed
+    if (!user.is_confirmed) {
+      return res
+        .status(403)
+        .json({ error: "Please confirm your email to login" });
     }
 
     // Generate a JWT token
@@ -101,16 +206,16 @@ export const getUsersController = async (req, res) => {
     res.json({
       message: "Users fetched",
       users,
-    }); // Send the users data as a JSON response
+    });
   } catch (error) {
     console.error("Error fetching users:", error.message);
-    res.status(500).json({ error: "Server error" }); // Send a 500 Server Error response
+    res.status(500).json({ error: "Server error" });
   }
 };
 
 // Get a user by ID
 export const getUserByIdController = async (req, res) => {
-  const user_id = parseInt(req.params.user_id); // Convert user_id to an integer
+  const user_id = parseInt(req.params.user_id);
 
   // Validate user_id is a positive integer
   if (isNaN(user_id) || user_id <= 0) {
@@ -123,19 +228,19 @@ export const getUserByIdController = async (req, res) => {
       res.json({
         message: "User fetched",
         user,
-      }); // Send the user data as a JSON response
+      });
     } else {
-      res.status(404).json({ error: "User not found" }); // Send a 404 Not Found response
+      res.status(404).json({ error: "User not found" });
     }
   } catch (error) {
     console.error("Error fetching user:", error.message);
-    res.status(500).json({ error: "Server error" }); // Send a 500 Server Error response
+    res.status(500).json({ error: "Server error" });
   }
 };
 
 // Get a user by email
 export const getUserByEmailController = async (req, res) => {
-  const { email } = req.query; // Get email from query parameters
+  const { email } = req.query;
 
   // Validate email is provided
   if (!email) {
@@ -143,15 +248,15 @@ export const getUserByEmailController = async (req, res) => {
   }
 
   try {
-    const user = await getUserByEmail(email);
+    const user = await getUserByEmail(email.toLowerCase());
     if (user) {
-      res.json(user); // Send the user data as a JSON response
+      res.json(user);
     } else {
-      res.status(404).json({ error: "User not found" }); // Send a 404 Not Found response
+      res.status(404).json({ error: "User not found" });
     }
   } catch (error) {
     console.error("Error fetching user:", error.message);
-    res.status(500).json({ error: "Server error" }); // Send a 500 Server Error response
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -172,6 +277,7 @@ export const updateUserController = async (req, res) => {
       .status(400)
       .json({ error: "Name, email, and password are required" });
   }
+
   // Normalize email to lowercase
   const normalizedEmail = email.toLowerCase();
 
@@ -206,9 +312,10 @@ export const updateUserController = async (req, res) => {
     }
   }
 };
+
 // Delete a user by ID
 export const deleteUserController = async (req, res) => {
-  const user_id = parseInt(req.params.user_id); // Convert user_id to an integer
+  const user_id = parseInt(req.params.user_id);
 
   // Validate user_id is a positive integer
   if (isNaN(user_id) || user_id <= 0) {
@@ -216,19 +323,17 @@ export const deleteUserController = async (req, res) => {
   }
 
   try {
-    // Check if the user exists
     const user = await getUserById(user_id);
     if (!user) {
-      return res.status(404).json({ error: "User not found" }); // Send a 404 Not Found response
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // Delete the user
     await deleteUser(user_id);
     res.json({
       message: `User (${user_id}) deleted successfully`,
-    }); // Send a success response
+    });
   } catch (error) {
     console.error("Error deleting user:", error.message);
-    res.status(500).json({ error: "Server error" }); // Send a 500 Server Error response
+    res.status(500).json({ error: "Server error" });
   }
 };
