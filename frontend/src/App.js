@@ -1,33 +1,27 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
-import { Dashboard } from "./components/Dashboard";
-import { Navigate } from "react-router-dom";
+import Register from "./components/Register";
+import Dashboard from "./components/Dashboard";
 
-const ProtectedRoute = ({ children }) => {
-  const user = JSON.parse(sessionStorage.getItem("user"));
-
-  if (!user?.token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-};
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
         <Route
           path="/"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Dashboard/>
             </ProtectedRoute>
           }
-        />{" "}
-        <Route path="/" element={<Dashboard />} />
+        />
+        <Route path="*" element={<h1>Not Found</h1>} />
       </Routes>
     </Router>
   );

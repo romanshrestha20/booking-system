@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { loginUser } from "../services/userApi";
 import { useNavigate } from "react-router-dom";
 import { handleApiError } from "../utils/errorHandler";
@@ -16,13 +17,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await loginUser({ email, password }); // Pass email and password
-      console.log("Login Response:", response); // Log the response
-      // Redirect to the home page or dashboard
-      navigate("/");
+      const response = await loginUser({ email, password });
+      console.log("Login Response:", response);
+      navigate("/"); // Redirect to home or dashboard
     } catch (error) {
-      console.error("Login Error:", error); // Log the error
-      setError(handleApiError(error)); // Set the error message to state
+      setError(error.message); // Extract message from the thrown Error object
+      console.error("Login Error:", error);
     } finally {
       setLoading(false);
     }
@@ -51,6 +51,14 @@ const Login = () => {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
+
+      <p>
+        {" "}
+        Don't have an account? <Link to="/register">Register</Link>
+      </p>
+      <p>
+        Forgot your password? <Link to="/forgot-password">Reset Password</Link>
+      </p>
     </div>
   );
 };

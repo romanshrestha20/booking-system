@@ -40,4 +40,17 @@ router.put("/:user_id", updateUserController);
 // Delete a user by ID
 router.delete("/:user_id", deleteUserController);
 
+// Logout a user
+router.post("/logout", (req, res) => {
+  try {
+    
+    // For stateless JWTs, inform the client to delete their local storage token
+    res.status(200).json({ message: "User logged out successfully" });
+  } catch (error) {
+    console.error("Error during logout:", error.message);
+    res.status(500).json({ message: "Logout failed. Please try again later." });
+  }
+});
+
+
 export default router;

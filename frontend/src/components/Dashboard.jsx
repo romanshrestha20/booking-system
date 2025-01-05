@@ -1,19 +1,22 @@
-import React, { use } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { removeToken } from "../services/api";
 
-export const Dashboard = () => {
-    const navigate = useNavigate();
+const Dashboard = () => {
+  const navigate = useNavigate();
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/login");
-    };
+  const handleLogout = () => {
+    removeToken(); // Clear the token
+    navigate("/login"); // Redirect to login page
+  };
 
   return (
     <div>
       <h2>Welcome to the Booking System</h2>
-          <p>You are now logged in!</p>
-          <button onClick={handleLogout}>Logout</button>
-          </div>
+      <p>You are now logged in!</p>
+      <button onClick={handleLogout}>Logout</button>
+    </div>
   );
 };
+
+export default Dashboard;
