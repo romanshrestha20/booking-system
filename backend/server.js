@@ -11,7 +11,10 @@ dotenv.config();
 
 // Create Express app
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000", // Allow requests from the frontend
+  credentials: true,
+}));
 app.use(express.json());
 
 // Test route

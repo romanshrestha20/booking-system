@@ -22,7 +22,7 @@ import {
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const baseUrl = process.env.BASE_URL;
+const baseUrl = "http://localhost:3000"; // Change this to your frontend URL
 
 // Create a new user
 export const createUserController = async (req, res) => {
@@ -170,16 +170,18 @@ export const requestPasswordResetController = async (req, res) => {
  * @param {object} res - The response object.
  */
 export const resetPasswordController = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { token } = req.params; // Extract token from the URL
+  const { password } = req.body; // Extract password from the request body
 
-  if (!token || !newPassword) {
-    return res
-      .status(400)
-      .json({ error: "Token and new password are required" });
+  if (!token || !password) {
+    return res.status(400).json({ error: "Token and new password are required" });
   }
 
   try {
-    const hashedPassword = await hashPassword(newPassword);
+    // Hash the new password
+    const hashedPassword = await hashPassword(password);
+
+    // Update the user's password in the database
     const user = await resetPassword(token, hashedPassword);
 
     if (!user) {

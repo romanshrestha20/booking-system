@@ -4,7 +4,7 @@ import api, { saveToken } from "./api"; // Import saveToken
 // Login a user and save the token
 export const loginUser = async (credentials) => {
   try {
-    const response = await api.post("/users/login", credentials);
+    const response = await api.post("/auth/login", credentials);
     const { token } = response.data; // Extract the token from the response
 
     // Save the token to sessionStorage
@@ -19,7 +19,7 @@ export const loginUser = async (credentials) => {
 // Register a new user
 export const registerUser = async (userData) => {
   try {
-    const response = await api.post("/users/register", userData);
+    const response = await api.post("/auth/register", userData);
     return response.data;
   } catch (error) {
     throw handleApiError(error);
@@ -29,7 +29,7 @@ export const registerUser = async (userData) => {
 // Confirm email with a 6-digit code
 export const confirmEmail = async (email, code) => {
   try {
-    const response = await api.post("/users/confirm-email", { email, code });
+    const response = await api.post("/auth/confirm-email", { email, code });
     return response.data;
   } catch (error) {
     throw handleApiError(error);
@@ -39,12 +39,35 @@ export const confirmEmail = async (email, code) => {
 // Resend confirmation email
 export const resendConfirmationEmail = async (email) => {
   try {
-    const response = await api.post("/users/resend-email", { email });
+    const response = await api.post("/auth/resend-email", { email });
     return response.data;
   } catch (error) {
     throw handleApiError(error);
   }
 };
+
+// Request password reset
+export const requestPasswordReset = async (email) => {
+  try {
+    const response = await api.post("/auth/reset-password", { email });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+// Reset password with a token
+export const resetPassword = async (token, password) => {
+  try {
+    const response = await api.post(`/auth/reset-password/${token}`, {
+      password,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || "Failed to reset password");
+  }
+};
+
 
 // Get user by ID
 export const getUserById = async (userId) => {
