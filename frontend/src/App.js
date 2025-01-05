@@ -6,6 +6,8 @@ import Dashboard from "./components/Dashboard";
 import ForgetPassword from "./components/ForgetPassword"; // Add ForgetPassword component
 import ResetPassword from "./components/ResetPassword"; // Add ResetPassword component
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoomList from "./components/RoomList";
+import BookingList from "./components/BookingList";
 
 function App() {
   return (
@@ -16,7 +18,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgetPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-
+        <Route path="/rooms" element={<RoomList />} />
+        <Route path="/bookings" element={<BookingList />} />
         {/* Protected Routes */}
         <Route
           path="/"

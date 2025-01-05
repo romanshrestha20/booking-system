@@ -1,11 +1,6 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  registerUser,
-  confirmEmail,
-  resendConfirmationEmail,
-} from "../services/userApi";
-import { handleApiError } from "../utils/errorHandler";
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
   const [formData, setFormData] = React.useState({
@@ -19,6 +14,7 @@ const Register = () => {
   const [loading, setLoading] = React.useState(false);
   const [step, setStep] = React.useState("register"); // "register" or "confirm"
   const navigate = useNavigate();
+  const { register, confirmEmail, resendConfirmationEmail } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,7 +27,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await registerUser({
+      const response = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -64,11 +60,12 @@ const Register = () => {
       }, 2000);
     } catch (error) {
       console.error("Confirm Email Error:", error);
-      setError(handleApiError(error));
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
+
   const handleResendCode = async () => {
     setError("");
     setLoading(true);
@@ -77,7 +74,7 @@ const Register = () => {
       await resendConfirmationEmail(formData.email);
       setMessage("Confirmation code resent. Please check your email.");
     } catch (error) {
-      setError(handleApiError(error));
+      setError(error.message);
     } finally {
       setLoading(false);
     }

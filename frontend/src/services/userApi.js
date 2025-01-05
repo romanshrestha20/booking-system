@@ -1,22 +1,17 @@
 import { handleApiError } from "../utils/errorHandler";
-import api, { saveToken } from "./api"; // Import saveToken
+import api, { saveToken } from "./api";
 
-// Login a user and save the token
 export const loginUser = async (credentials) => {
   try {
     const response = await api.post("/auth/login", credentials);
-    const { token } = response.data; // Extract the token from the response
-
-    // Save the token to sessionStorage
-    saveToken(token);
-
-    return response.data; // Return the response data
+    const { token, ...userData } = response.data;
+    saveToken({ token, ...userData });
+    return response.data;
   } catch (error) {
-    throw handleApiError(error); // Throw the error back to the component
+    throw handleApiError(error);
   }
 };
 
-// Register a new user
 export const registerUser = async (userData) => {
   try {
     const response = await api.post("/auth/register", userData);
@@ -26,7 +21,6 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Confirm email with a 6-digit code
 export const confirmEmail = async (email, code) => {
   try {
     const response = await api.post("/auth/confirm-email", { email, code });
@@ -36,7 +30,6 @@ export const confirmEmail = async (email, code) => {
   }
 };
 
-// Resend confirmation email
 export const resendConfirmationEmail = async (email) => {
   try {
     const response = await api.post("/auth/resend-email", { email });
@@ -46,7 +39,6 @@ export const resendConfirmationEmail = async (email) => {
   }
 };
 
-// Request password reset
 export const requestPasswordReset = async (email) => {
   try {
     const response = await api.post("/auth/reset-password", { email });
@@ -56,20 +48,15 @@ export const requestPasswordReset = async (email) => {
   }
 };
 
-// Reset password with a token
 export const resetPassword = async (token, password) => {
   try {
-    const response = await api.post(`/auth/reset-password/${token}`, {
-      password,
-    });
+    const response = await api.post(`/auth/reset-password/${token}`, { password });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.error || "Failed to reset password");
+    throw handleApiError(error);
   }
 };
 
-
-// Get user by ID
 export const getUserById = async (userId) => {
   try {
     const response = await api.get(`/users/${userId}`);
@@ -79,7 +66,6 @@ export const getUserById = async (userId) => {
   }
 };
 
-// Get user by email
 export const getUserByEmail = async (email) => {
   try {
     const response = await api.get(`/users/email/${email}`);
@@ -89,7 +75,6 @@ export const getUserByEmail = async (email) => {
   }
 };
 
-// Update user by ID
 export const updateUser = async (userId, userData) => {
   try {
     const response = await api.put(`/users/${userId}`, userData);
@@ -99,7 +84,6 @@ export const updateUser = async (userId, userData) => {
   }
 };
 
-// Delete user by ID
 export const deleteUser = async (userId) => {
   try {
     const response = await api.delete(`/users/${userId}`);

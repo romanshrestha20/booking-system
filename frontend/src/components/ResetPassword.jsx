@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { resetPassword } from "../services/userApi"; // Your API service
+import { useAuth } from "../context/AuthContext";
 
 const ResetPassword = () => {
   const { token } = useParams(); // Extract token from the URL
@@ -8,8 +8,8 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { resetPassword, loading } = useAuth(); // Use resetPassword and loading from useAuth
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -21,21 +21,21 @@ const ResetPassword = () => {
       setError("Passwords do not match.");
       return;
     }
-
-    setLoading(true);
+    // validiate password length
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
 
     try {
-      // Call the resetPassword API
+      // Call the resetPassword function from useAuth
       const response = await resetPassword(token, password);
-      setSuccess(response.message); // Display success message
-      console.log(token);
+      setSuccess("Password reset successfully. Redirecting to login..."); // Display success message
       setTimeout(() => {
         navigate("/login"); // Redirect to login after 2 seconds
       }, 2000);
     } catch (error) {
-      setError(error.message); // Display error message
-    } finally {
-      setLoading(false);
+      setError(error.message || "Failed to reset password. Please try again."); // Display error message
     }
   };
 
@@ -53,6 +53,7 @@ const ResetPassword = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </div>
@@ -64,6 +65,7 @@ const ResetPassword = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
+            disabled={loading}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </div>
@@ -77,7 +79,7 @@ const ResetPassword = () => {
             color: "#fff",
             border: "none",
             borderRadius: "5px",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
           {loading ? "Resetting..." : "Reset Password"}

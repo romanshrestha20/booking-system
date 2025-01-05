@@ -1,7 +1,8 @@
-import axios from 'axios';
+// services/api.js
+import axios from "axios";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
-// Create an Axios instance with the base URL
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -9,28 +10,28 @@ const api = axios.create({
   },
 });
 
-// Save the token to sessionStorage
-export const saveToken = (token) => {
-  sessionStorage.setItem("user", JSON.stringify({ token }));
+// Save token and user data to sessionStorage
+export const saveToken = (userData) => {
+  sessionStorage.setItem("user", JSON.stringify(userData));
 };
 
-// Retrieve the token from sessionStorage
-export const getToken = () => {
-  const user = JSON.parse(sessionStorage.getItem("user"));
-  return user?.token;
-};
-
-// Remove the token from sessionStorage (logout)
+// Remove token and user data from sessionStorage
 export const removeToken = () => {
   sessionStorage.removeItem("user");
 };
 
-// Add a request interceptor to include the JWT token in headers
+// Retrieve user data from sessionStorage
+export const getUser = () => {
+  const user = sessionStorage.getItem("user");
+  return user ? JSON.parse(user) : null;
+};
+
+// Add request interceptor to include JWT token in headers
 api.interceptors.request.use(
   (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const user = getUser();
+    if (user?.token) {
+      config.headers.Authorization = `Bearer ${user.token}`;
     }
     return config;
   },
@@ -39,15 +40,15 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle errors globally
+// Add response interceptor to handle errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
       if (error.response.status === 401) {
         // Handle unauthorized errors (e.g., redirect to login)
-        removeToken(); // Clear the token
-        window.location.href = "/login"; // Redirect to login page
+        removeToken();
+        window.location.href = "/login";
       } else if (error.response.status === 404) {
         console.error("Resource not found.");
       } else if (error.response.status === 500) {
