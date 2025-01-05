@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 const ForgetPassword = () => {
   const [email, setEmail] = useState("");
@@ -23,13 +23,15 @@ const ForgetPassword = () => {
       return;
     }
 
-
     try {
       const response = await requestPasswordReset(email);
       setSuccess(response.message); // Use response.message for success message
     } catch (error) {
-      setError(error.message || "Failed to send password reset email. Please try again."); // Display error message
-      }
+      setError(
+        error.message ||
+          "Failed to send password reset email. Please try again."
+      ); // Display error message
+    }
   };
 
   return (
@@ -59,7 +61,9 @@ const ForgetPassword = () => {
                 {/* Display error message */}
                 {error && <div className="alert alert-danger">{error}</div>}
                 {/* Display success message */}
-                {success && <div className="alert alert-success">{success}</div>}
+                {success && (
+                  <div className="alert alert-success">{success}</div>
+                )}
                 <button
                   type="submit"
                   className="btn btn-primary w-100"

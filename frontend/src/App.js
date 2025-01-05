@@ -1,13 +1,14 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/Login";
-import Register from "./components/Register";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Dashboard from "./components/Dashboard";
-import ForgetPassword from "./components/ForgetPassword"; // Add ForgetPassword component
-import ResetPassword from "./components/ResetPassword"; // Add ResetPassword component
-import ProtectedRoute from "./components/ProtectedRoute";
-import RoomList from "./components/RoomList";
-import BookingList from "./components/BookingList";
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import ForgetPassword from "./components/auth/ForgetPassword";
+import ResetPassword from "./components/auth/ResetPassword";
+import RoomList from "./components/rooms/RoomList";
+import BookingList from "./components/bookings/BookingList";
+
 
 function App() {
   return (

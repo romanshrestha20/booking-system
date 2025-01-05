@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -46,9 +46,13 @@ const Login = () => {
       console.log("Login error:", error); // Add a log to check the error object
       if (error?.message === "Please confirm your email to login") {
         setShowConfirmationForm(true);
-        setMessage("Your email is not confirmed. Please enter the confirmation code.");
+        setMessage(
+          "Your email is not confirmed. Please enter the confirmation code."
+        );
       } else {
-        setError(error?.message || "An unexpected error occurred. Please try again.");
+        setError(
+          error?.message || "An unexpected error occurred. Please try again."
+        );
       }
     } finally {
       setLoading(false);
@@ -85,7 +89,10 @@ const Login = () => {
       setMessage("Confirmation email sent. Please check your email.");
     } catch (error) {
       console.log("Resend error:", error); // Log for debugging
-      setError(error?.message || "Failed to resend confirmation email. Please try again.");
+      setError(
+        error?.message ||
+          "Failed to resend confirmation email. Please try again."
+      );
     } finally {
       setLoading(false);
     }

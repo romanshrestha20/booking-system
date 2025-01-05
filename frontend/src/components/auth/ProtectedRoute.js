@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
+import { useAuth } from "../../context/AuthContext"; // Import the useAuth hook
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth(); // Get the user and loading state from AuthContext
