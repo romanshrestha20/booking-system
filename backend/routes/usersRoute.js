@@ -9,48 +9,30 @@ import {
   loginUserController,
   confirmCodeController,
   resendEmailController,
+  requestPasswordResetController,
+  resetPasswordController,
 } from "../controllers/userController.js";
 
 const router = express.Router();
 
-// Create a new user
-router.post("/register", createUserController);
+// Authentication Routes
+router.post("/auth/register", createUserController); // Register a new user
+router.post("/auth/login", loginUserController); // Login a user
+router.post("/auth/confirm-email", confirmCodeController); // Confirm email with a 6-digit code
+router.post("/auth/resend-email", resendEmailController); // Resend confirmation email
+router.post("/auth/reset-password", requestPasswordResetController); // Request password reset
+router.post("/auth/reset-password/:token", resetPasswordController); // Reset password with a token
 
-// Confirm email with 6-digit code
-router.post("/confirm-email", confirmCodeController);
+// User Routes
+router.get("/users", getUsersController); // Get all users
+router.get("/users/:user_id", getUserByIdController); // Get a user by ID
+router.get("/users/email/:email", getUserByEmailController); // Get a user by email
+router.put("/users/:user_id", updateUserController); // Update a user by ID
+router.delete("/users/:user_id", deleteUserController); // Delete a user by ID
 
-// Resend confirmation email with a new 6-digit code
-router.post("/resend-email", resendEmailController);
-
-// Login a user
-router.post("/login", loginUserController);
-
-// Get all users
-router.get("/", getUsersController);
-
-// Get a user by ID
-router.get("/:user_id", getUserByIdController);
-
-// Get a user by email
-router.get("/email/:email", getUserByEmailController);
-
-// Update a user by ID
-router.put("/:user_id", updateUserController);
-
-// Delete a user by ID
-router.delete("/:user_id", deleteUserController);
-
-// Logout a user
-router.post("/logout", (req, res) => {
-  try {
-    
-    // For stateless JWTs, inform the client to delete their local storage token
-    res.status(200).json({ message: "User logged out successfully" });
-  } catch (error) {
-    console.error("Error during logout:", error.message);
-    res.status(500).json({ message: "Logout failed. Please try again later." });
-  }
+// Logout Route
+router.post("/auth/logout", (req, res) => {
+  res.status(200).json({ message: "User logged out successfully" });
 });
-
 
 export default router;

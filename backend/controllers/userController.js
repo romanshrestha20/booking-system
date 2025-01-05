@@ -5,11 +5,24 @@ import {
   getUserByEmail,
   updateUser,
   deleteUser,
+  confirmEmail,
+  updateConfirmationCode,
+  requestPasswordReset,
+  resetPassword,
 } from "../models/users.js";
-import { sendConfirmationEmail } from "../utils/sendEmail.js";
+import {
+  sendPasswordResetEmail,
+  sendConfirmationEmail,
+} from "../utils/sendEmail.js";
+import {
+  hashPassword,
+  generateSixDigitCode,
+  generateResetToken,
+} from "../utils/helpers.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import pool from "../db.js"; // Ensure pool is imported
+
+const baseUrl = process.env.BASE_URL;
 
 // Create a new user
 export const createUserController = async (req, res) => {
@@ -22,7 +35,7 @@ export const createUserController = async (req, res) => {
       .json({ error: "Name, email, and password are required" });
   }
 
-  // Normalize email to lowercase
+  // Normalize email
   const normalizedEmail = email.toLowerCase();
 
   // Validate role
@@ -33,45 +46,30 @@ export const createUserController = async (req, res) => {
   }
 
   try {
+    const confirmationCode = generateSixDigitCode();
+
     // Create the user in the database
     const newUser = await createUser({
       name,
       email: normalizedEmail,
       password,
       role,
+      confirmationCode,
     });
 
-    // Send confirmation email with the 6-digit code
-    await sendConfirmationEmail(normalizedEmail, newUser.confirmation_code);
+    // Send confirmation email
+    await sendConfirmationEmail(normalizedEmail, confirmationCode);
 
-    // If email is sent successfully, return success response
     res.status(201).json({
       message:
         "User created. Please check your email for the confirmation code.",
       user: newUser,
     });
-    console.log("Confirmation code: " + newUser.confirmation_code);
   } catch (error) {
     console.error("Error during user creation:", error.message);
 
-    // If the error is related to email sending, delete the user
-    if (error.message.includes("Error sending confirmation email")) {
-      try {
-        // Delete the user if the email fails to send
-        await deleteUser(newUser.user_id);
-        console.log("User deleted due to email sending failure.");
-      } catch (deleteError) {
-        console.error("Error deleting user:", deleteError.message);
-      }
-    }
-
-    // Return appropriate error response
     if (error.message === "Email already exists") {
       res.status(409).json({ error: error.message });
-    } else if (error.message.includes("Error sending confirmation email")) {
-      res.status(500).json({
-        error: "Failed to send confirmation email. Account not created.",
-      });
     } else {
       res.status(500).json({ error: "Server error" });
     }
@@ -87,25 +85,11 @@ export const confirmCodeController = async (req, res) => {
   }
 
   try {
-    const user = await getUserByEmail(email.toLowerCase());
+    const user = await confirmEmail(code);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "Invalid code" });
     }
-
-    if (user.is_confirmed) {
-      return res.status(400).json({ error: "Email already confirmed" });
-    }
-
-    if (user.confirmation_code !== code) {
-      return res.status(400).json({ error: "Invalid confirmation code" });
-    }
-
-    // Mark the user as confirmed
-    await pool.query(
-      "UPDATE Users SET is_confirmed = true, confirmation_code = NULL WHERE user_id = $1",
-      [user.user_id]
-    );
 
     res.json({ message: "Email confirmed successfully" });
   } catch (error) {
@@ -123,7 +107,7 @@ export const resendEmailController = async (req, res) => {
   }
 
   try {
-    const user = await getUserByEmail(email.toLowerCase());
+    const user = await getUserByEmail(email);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -133,12 +117,8 @@ export const resendEmailController = async (req, res) => {
       return res.status(400).json({ error: "Email already confirmed" });
     }
 
-    // Generate a new 6-digit confirmation code
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    await pool.query(
-      "UPDATE Users SET confirmation_code = $1 WHERE user_id = $2",
-      [newCode, user.user_id]
-    );
+    const newCode = generateSixDigitCode();
+    await updateConfirmationCode(email, newCode);
 
     // Send confirmation email with the new code
     await sendConfirmationEmail(email, newCode);
@@ -150,6 +130,68 @@ export const resendEmailController = async (req, res) => {
   }
 };
 
+/**
+ * Request password reset.
+ * @param {object} req - The request object.
+ * @param {object} res - The response object.
+ */
+export const requestPasswordResetController = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    const user = await getUserByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const resetToken = generateResetToken();
+    const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
+
+    await requestPasswordReset(email, resetToken, resetTokenExpires);
+
+    const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
+    await sendPasswordResetEmail(email, resetUrl);
+
+    res.json({ message: "Password reset instructions sent to your email." });
+  } catch (error) {
+    console.error("Error requesting password reset:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+/**
+ * Reset password.
+ * @param {object} req - The request object.
+ * @param {object} res - The response object.
+ */
+export const resetPasswordController = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res
+      .status(400)
+      .json({ error: "Token and new password are required" });
+  }
+
+  try {
+    const hashedPassword = await hashPassword(newPassword);
+    const user = await resetPassword(token, hashedPassword);
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    res.json({ message: "Password reset successfully." });
+  } catch (error) {
+    console.error("Error resetting password:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+};
 // Login a user and return a JWT
 export const loginUserController = async (req, res) => {
   const { email, password } = req.body;

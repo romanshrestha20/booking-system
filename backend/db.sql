@@ -11,7 +11,9 @@ CREATE TABLE Users (
     password VARCHAR(100) NOT NULL,
     role VARCHAR(50) DEFAULT 'customer' CHECK (role IN ('admin', 'customer')), -- Enforces valid roles
     confirmation_code VARCHAR(6), -- 6-digit code for email confirmation
-    is_confirmed BOOLEAN DEFAULT false -- Tracks whether the email is confirmed
+    is_confirmed BOOLEAN DEFAULT false, -- Tracks whether the email is confirmed
+    reset_password_token VARCHAR(255), -- Token for password reset
+    reset_password_expires TIMESTAMP -- Expiration time for the password reset token
 );
 
 -- Create Rooms Table

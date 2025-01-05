@@ -9,9 +9,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to send confirmation email
+/**
+ * Sends a confirmation email with a 6-digit code.
+ * @param {string} email - The recipient's email address.
+ * @param {string} code - The 6-digit confirmation code.
+ */
 export const sendConfirmationEmail = async (email, code) => {
-  // Create the email content
   const mailOptions = {
     from: process.env.EMAIL_USER, // Sender address
     to: email, // Recipient address
@@ -24,11 +27,32 @@ export const sendConfirmationEmail = async (email, code) => {
   };
 
   try {
-    // Send the email
     await transporter.sendMail(mailOptions);
     console.log("Confirmation email sent successfully");
   } catch (error) {
     console.error("Error sending confirmation email:", error);
-    throw error; // Re-throw the error to handle it in the calling function
+    throw error;
+  }
+};
+
+/**
+ * Sends a password reset email with a reset link.
+ * @param {string} email - The recipient's email address.
+ * @param {string} resetUrl - The password reset URL.
+ */
+export const sendPasswordResetEmail = async (email, resetUrl) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Password Reset",
+    text: `You requested a password reset. Click the link to reset your password: ${resetUrl}`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent successfully");
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw error;
   }
 };

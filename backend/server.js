@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import roomsRoute from "./routes/roomsRoute.js";
 import usersRoute from "./routes/usersRoute.js";
 import bookingsRoute from "./routes/bookingsRoute.js";
-import { errorHandler } from './middlewares/errorHandler.js';
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 // Load environment variables
 dotenv.config();
@@ -21,8 +21,8 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/rooms", roomsRoute);
-app.use('/api/users', usersRoute);
-app.use('/api/bookings', bookingsRoute);
+app.use("/api/", usersRoute);
+app.use("/api/bookings", bookingsRoute);
 
 // Error handler middleware (placed at the end)
 app.use(errorHandler);

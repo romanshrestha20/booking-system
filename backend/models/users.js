@@ -1,20 +1,9 @@
 import pool from "../db.js";
-import bcrypt from "bcrypt";
-
-// Hash a password
-const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-};
-
-// Generate a 6-digit confirmation code
-const generateSixDigitCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString(); // Generates a 6-digit code
-};
+import { hashPassword } from "../utils/helpers.js";
 
 // Create a new user
 export const createUser = async (user) => {
-  const { name, email, password, role = "customer" } = user;
+  const { name, email, password, role = "customer", confirmationCode } = user;
 
   const normalizedEmail = email.toLowerCase();
 
@@ -23,7 +12,6 @@ export const createUser = async (user) => {
   }
 
   const hashedPassword = await hashPassword(password);
-  const confirmationCode = generateSixDigitCode(); // Generate a 6-digit code
 
   try {
     const result = await pool.query(
@@ -40,7 +28,7 @@ export const createUser = async (user) => {
 };
 
 // Confirm email with 6-digit code
-export const emailConfirmation = async (code) => {
+export const confirmEmail = async (code) => {
   try {
     const user = await pool.query(
       "SELECT * FROM Users WHERE confirmation_code = $1",
@@ -57,41 +45,61 @@ export const emailConfirmation = async (code) => {
     );
     return result.rows[0];
   } catch (error) {
-    console.error(error.message);
     throw error;
   }
 };
 
-// Resend confirmation email with a new 6-digit code
-export const resendConfirmationEmail = async (email) => {
+// Update confirmation code for resending email
+export const updateConfirmationCode = async (email, newCode) => {
   const normalizedEmail = email.toLowerCase();
 
   try {
-    const user = await pool.query(
-      "SELECT * FROM Users WHERE email = $1",
-      [normalizedEmail]
+    const result = await pool.query(
+      "UPDATE Users SET confirmation_code = $1 WHERE email = $2 RETURNING *",
+      [newCode, normalizedEmail]
     );
-
-    if (user.rows.length === 0) {
-      throw new Error("User not found");
-    }
-
-    const foundUser = user.rows[0];
-
-    if (foundUser.is_confirmed) {
-      throw new Error("Email is already confirmed");
-    }
-
-    const newCode = generateSixDigitCode(); // Generate a new 6-digit code
-
-    await pool.query(
-      "UPDATE Users SET confirmation_code = $1 WHERE user_id = $2",
-      [newCode, foundUser.user_id]
-    );
-
-    return { email: foundUser.email, code: newCode };
+    return result.rows[0];
   } catch (error) {
-    console.error(error.message);
+    throw error;
+  }
+};
+
+
+/**
+ * Request password reset.
+ * @param {string} email - The user's email.
+ * @param {string} resetToken - The reset token.
+ * @param {Date} resetTokenExpires - The reset token expiration date.
+ * @returns {object} - The updated user.
+ */
+export const requestPasswordReset = async (email, resetToken, resetTokenExpires) => {
+  const normalizedEmail = email.toLowerCase();
+
+  try {
+    const result = await pool.query(
+      "UPDATE Users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3 RETURNING *",
+      [resetToken, resetTokenExpires, normalizedEmail]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Reset password.
+ * @param {string} token - The reset token.
+ * @param {string} hashedPassword - The hashed new password.
+ * @returns {object} - The updated user.
+ */
+export const resetPassword = async (token, hashedPassword) => {
+  try {
+    const result = await pool.query(
+      "UPDATE Users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE reset_password_token = $2 AND reset_password_expires > NOW() RETURNING *",
+      [hashedPassword, token]
+    );
+    return result.rows[0];
+  } catch (error) {
     throw error;
   }
 };
@@ -102,7 +110,6 @@ export const getUsers = async () => {
     const result = await pool.query("SELECT * FROM Users");
     return result.rows;
   } catch (error) {
-    console.error(error.message);
     throw error;
   }
 };
@@ -116,7 +123,6 @@ export const getUserById = async (user_id) => {
     );
     return result.rows[0];
   } catch (error) {
-    console.error(error.message);
     throw error;
   }
 };
@@ -131,7 +137,6 @@ export const getUserByEmail = async (email) => {
     );
     return result.rows[0];
   } catch (error) {
-    console.error(error.message);
     throw error;
   }
 };
@@ -166,7 +171,6 @@ export const deleteUser = async (user_id) => {
   try {
     await pool.query("DELETE FROM Users WHERE user_id = $1", [user_id]);
   } catch (error) {
-    console.error(error.message);
     throw error;
   }
 };
