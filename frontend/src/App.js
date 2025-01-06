@@ -7,8 +7,9 @@ import Register from "./components/auth/Register";
 import ForgetPassword from "./components/auth/ForgetPassword";
 import ResetPassword from "./components/auth/ResetPassword";
 import RoomList from "./components/rooms/RoomList";
+import RoomDetail from "./components/rooms/RoomDetail";
 import BookingList from "./components/bookings/BookingList";
-
+import BookingDetail from "./components/bookings/BookingDetail";
 
 function App() {
   return (
@@ -20,7 +21,9 @@ function App() {
         <Route path="/forgot-password" element={<ForgetPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/rooms" element={<RoomList />} />
+        <Route path="/rooms/:roomId" element={<RoomDetail />} />
         <Route path="/bookings" element={<BookingList />} />
+        <Route path="/bookings/:bookingId" element={<BookingDetail />} />
         {/* Protected Routes */}
         <Route
           path="/"

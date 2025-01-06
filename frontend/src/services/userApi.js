@@ -66,6 +66,15 @@ export const getUserById = async (userId) => {
   }
 };
 
+export const getUsers = async () => {
+  try {
+    const response = await api.get("/users");
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
 export const getUserByEmail = async (email) => {
   try {
     const response = await api.get(`/users/email/${email}`);
