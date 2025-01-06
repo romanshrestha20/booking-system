@@ -16,32 +16,35 @@ import {
   validateRoomId,
 } from "../middlewares/bookingValidation.js";
 
+import { authenticateUser, authorizeUser } from "../middlewares/authMiddleware.js"; // Import middleware
+
 const router = express.Router();
 
-// Create a new booking
-router.post("/", validateBooking, createBookingController);
+// Create a new booking (Authenticated users only)
+router.post("/", authenticateUser, validateBooking, createBookingController);
 
-// Get all bookings
-router.get("/", getBookingsController);
+// Get all bookings (Admin only)
+router.get("/", authenticateUser, authorizeUser(["admin"]), getBookingsController);
 
-// Get a booking by ID
-router.get("/:booking_id", validateBookingId, getBookingByIdController);
+// Get a booking by ID (Authenticated users only)
+router.get("/:booking_id", authenticateUser, validateBookingId, getBookingByIdController);
 
-// Get bookings by user ID
-router.get('/user/:user_id', validateUserId, getBookingsByUserIdController);
+// Get bookings by user ID (Authenticated users only)
+router.get('/user/:user_id', authenticateUser, validateUserId, getBookingsByUserIdController);
 
-// Get bookings by room ID
-router.get('/room/:room_id', validateRoomId, getBookingsByRoomIdController);
+// Get bookings by room ID (Authenticated users only)
+router.get('/room/:room_id', authenticateUser, validateRoomId, getBookingsByRoomIdController);
 
-// Update a booking by ID
+// Update a booking by ID (Authenticated users only)
 router.put(
   "/:booking_id",
+  authenticateUser,
   validateBookingId,
   validateBooking,
   updateBookingController
 );
 
-// Delete a booking by ID
-router.delete('/:booking_id', validateBookingId, deleteBookingController);
+// Delete a booking by ID (Admin only)
+router.delete('/:booking_id', authenticateUser, authorizeUser(["admin"]), validateBookingId, deleteBookingController);
 
 export default router;
