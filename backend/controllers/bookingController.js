@@ -11,7 +11,6 @@ import {
   isRoomAvailable,
 } from "../models/bookings.js";
 
-
 export const createBookingController = async (req, res) => {
   const {
     user_id,
@@ -95,7 +94,6 @@ export const createBookingController = async (req, res) => {
   }
 };
 
-// Get all bookings
 export const getBookingsController = async (req, res) => {
   try {
     const bookings = await getBookings();
@@ -109,7 +107,6 @@ export const getBookingsController = async (req, res) => {
   }
 };
 
-// Get a booking by ID
 export const getBookingByIdController = async (req, res) => {
   const booking_id = parseInt(req.params.booking_id);
 
@@ -134,9 +131,8 @@ export const getBookingByIdController = async (req, res) => {
   }
 };
 
-// Get bookings by user ID
 export const getBookingsByUserIdController = async (req, res) => {
-  const user_id = parseInt(req.params.user_id);
+  const user_id = req.user_id; // Use the validated user_id from the request object
 
   // Validate user_id is a positive integer
   if (isNaN(user_id) || user_id <= 0) {
@@ -145,21 +141,16 @@ export const getBookingsByUserIdController = async (req, res) => {
 
   try {
     const bookings = await getBookingsByUserId(user_id);
-    if (bookings.length > 0) {
-      res.json({
-        message: "Bookings fetched successfully",
-        bookings,
-      });
-    } else {
-      res.status(404).json({ error: "No bookings found for this user" });
-    }
+    res.json({
+      message: "Bookings fetched successfully",
+      bookings,
+    });
   } catch (error) {
     console.error("Error fetching bookings:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 };
 
-// Get bookings by room ID
 export const getBookingsByRoomIdController = async (req, res) => {
   const room_id = parseInt(req.params.room_id);
 
@@ -184,7 +175,6 @@ export const getBookingsByRoomIdController = async (req, res) => {
   }
 };
 
-// Update a booking by ID
 export const updateBookingController = async (req, res) => {
   const booking_id = parseInt(req.params.booking_id);
 
@@ -236,6 +226,11 @@ export const updateBookingController = async (req, res) => {
   }
 
   try {
+    const booking = await getBookingById(booking_id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
     const updatedBooking = await updateBooking(booking_id, {
       user_id,
       room_id,
@@ -244,21 +239,16 @@ export const updateBookingController = async (req, res) => {
       total_price,
       status,
     });
-    if (updatedBooking) {
-      res.json({
-        message: "Booking updated successfully",
-        booking: updatedBooking,
-      });
-    } else {
-      res.status(404).json({ error: "Booking not found" });
-    }
+    res.json({
+      message: "Booking updated successfully",
+      booking: updatedBooking,
+    });
   } catch (error) {
     console.error("Error updating booking:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 };
 
-// Delete a booking by ID
 export const deleteBookingController = async (req, res) => {
   const booking_id = parseInt(req.params.booking_id);
 
@@ -268,11 +258,6 @@ export const deleteBookingController = async (req, res) => {
   }
 
   try {
-    const booking = await getBookingById(booking_id);
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
-    }
-
     await deleteBooking(booking_id);
     res.json({ message: `Booking Id ${booking_id} deleted successfully` });
   } catch (error) {

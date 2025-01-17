@@ -23,6 +23,7 @@ export const removeToken = () => {
 // Retrieve user data from sessionStorage
 export const getUser = () => {
   const user = sessionStorage.getItem("user");
+  console.log("User data:", user);
   return user ? JSON.parse(user) : null;
 };
 

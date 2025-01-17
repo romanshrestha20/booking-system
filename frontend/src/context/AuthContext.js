@@ -14,9 +14,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await api.post("/auth/login", credentials);
-      const { token, ...userData } = response.data;
-      saveToken({ token, ...userData }); // Save token and user data to sessionStorage
-      setUser(userData); // Update user state
+      const { token, user, message } = response.data; // Extract token, user, and message
+      saveToken({ token, ...user }); // Save token and user data to sessionStorage
+      setUser(user); // Update user state
       return response.data;
     } catch (error) {
       throw handleApiError(error);

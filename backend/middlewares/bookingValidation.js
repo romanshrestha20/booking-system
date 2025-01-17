@@ -53,6 +53,8 @@ export const validateUserId = [
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    
+    req.user_id = req.params.user_id;
     next();
   },
 ];

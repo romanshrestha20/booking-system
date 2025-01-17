@@ -8,6 +8,7 @@ import {
 } from "../../services/roomApi"; // Import getRooms
 import { getUsers } from "../../services/userApi"; // Import getUsers
 import BookingForm from "../bookings/BookingForm";
+import { useAuth } from "../../context/AuthContext"; // Import useAuth
 
 const RoomDetail = () => {
   const { roomId } = useParams();
@@ -26,6 +27,8 @@ const RoomDetail = () => {
   });
   const [availableRooms, setAvailableRooms] = useState([]); // State for available rooms
   const [users, setUsers] = useState([]); // State for users
+
+  const { user } = useAuth(); // Get the current user from AuthContext
 
   useEffect(() => {
     const fetchRoom = async () => {
@@ -98,11 +101,12 @@ const RoomDetail = () => {
   };
 
   const toggleEditMode = () => {
-    setIsEditing(!isEditing);
+    if (user?.role === "admin") {
+      setIsEditing(!isEditing);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
-
 
   return (
     <div>
@@ -111,7 +115,7 @@ const RoomDetail = () => {
       {error && <div className="error-message">{error}</div>}
       {/* if room not found */}
       {!room && <p>Room not found.</p>}
-      {isEditing ? (
+      {isEditing && user?.role === "admin" ? (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -194,8 +198,13 @@ const RoomDetail = () => {
                 onBookingError={(error) => setError(error)}
               />
             )}
-            <button onClick={toggleEditMode}>Edit</button>
-            <button onClick={handleDeleteRoom}>Delete</button>
+            {/* Only show Edit and Delete buttons if the user is an admin */}
+            {user?.role === "admin" && (
+              <div>
+                <button onClick={toggleEditMode}>Edit</button>
+                <button onClick={handleDeleteRoom}>Delete</button>
+              </div>
+            )}
           </div>
         </>
       )}

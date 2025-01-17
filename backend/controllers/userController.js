@@ -235,6 +235,7 @@ export const loginUserController = async (req, res) => {
 
     res.json({
       message: "Login successful",
+      user,
       token,
     });
   } catch (error) {

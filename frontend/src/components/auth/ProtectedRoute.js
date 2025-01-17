@@ -1,32 +1,21 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // Import the useAuth hook
+import { useAuth } from "../../context/AuthContext";
 
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth(); // Get the user and loading state from AuthContext
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const { user } = useAuth();
 
-  // Show a loading spinner while checking auth state
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  // Redirect to login if the user is not authenticated
+  // If user is not authenticated, redirect to login page
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" />;
   }
 
-  // Render the protected component if the user is authenticated
+  // If user does not have the required role, redirect to home page
+  if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/" />;
+  }
+
+  // If user is authenticated and has the required role, render the children
   return children;
 };
 
